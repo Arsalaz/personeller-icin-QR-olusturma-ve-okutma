@@ -131,20 +131,21 @@
             // kayıtToolStripMenuItem
             // 
             kayıtToolStripMenuItem.Name = "kayıtToolStripMenuItem";
-            kayıtToolStripMenuItem.Size = new Size(156, 28);
+            kayıtToolStripMenuItem.Size = new Size(224, 28);
             kayıtToolStripMenuItem.Text = "Kayıt";
             kayıtToolStripMenuItem.Click += kayıtToolStripMenuItem_Click;
             // 
             // kontrolToolStripMenuItem
             // 
             kontrolToolStripMenuItem.Name = "kontrolToolStripMenuItem";
-            kontrolToolStripMenuItem.Size = new Size(156, 28);
+            kontrolToolStripMenuItem.Size = new Size(224, 28);
             kontrolToolStripMenuItem.Text = "Kontrol";
+            kontrolToolStripMenuItem.Click += kontrolToolStripMenuItem_Click;
             // 
             // düzenleToolStripMenuItem
             // 
             düzenleToolStripMenuItem.Name = "düzenleToolStripMenuItem";
-            düzenleToolStripMenuItem.Size = new Size(156, 28);
+            düzenleToolStripMenuItem.Size = new Size(224, 28);
             düzenleToolStripMenuItem.Text = "Düzenle";
             // 
             // label2
