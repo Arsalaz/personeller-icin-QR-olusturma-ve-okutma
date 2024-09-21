@@ -12,7 +12,7 @@ using Microsoft.Data.SqlClient;
 
 namespace TT
 {
-    public partial class Form1 : Form
+    public partial class Form1 : System.Windows.Forms.Form
     {
         private VideoCapture _capture;
         private BarcodeReader reader;
@@ -22,6 +22,9 @@ namespace TT
         {
             InitializeComponent();
             reader = new BarcodeReader();
+
+            // PictureBox'ýn SizeMode özelliðini ayarla
+            pictureBoxVideo.SizeMode = PictureBoxSizeMode.StretchImage; // Kameradan gelen görüntü PictureBox'a sýðdýrýlacak
         }
 
         // Kamerayý baþlatma iþlemi
@@ -48,7 +51,7 @@ namespace TT
                 _capture.Retrieve(frame, 0);
 
                 // Kameradan alýnan görüntüyü PictureBox'a yansýtma
-                pictureBoxVideo.Image = frame.ToImage<Bgr, byte>().ToBitmap();
+                pictureBoxVideo.Image = frame.ToImage<Bgr, byte>().ToBitmap(); // Bu görüntü PictureBox'a sýðdýrýlacak
 
                 // QR kodu tarama
                 var bitmap = frame.ToImage<Bgr, byte>().ToBitmap();
@@ -59,7 +62,15 @@ namespace TT
                     // QR kod baþarýyla okundu, sonucu Label1'e yazdýr
                     Invoke(new MethodInvoker(delegate ()
                     {
-                        label1.Text = result.Text;
+                        string ownerName = GetOwnerNameFromDatabase(result.Text);
+                        if (!string.IsNullOrEmpty(ownerName))
+                        {
+                            label1.Text = $"Kiþi Adý: {ownerName}";
+                        }
+                        else
+                        {
+                            label1.Text = "Kiþi bulunamadý.";
+                        }
 
                         // Kamerayý durdur
                         _capture.Stop();
@@ -81,21 +92,16 @@ namespace TT
         // QR kod oluþturma ve veritabanýndan kiþiye özel kod alma iþlemi
         private void button1_Click(object sender, EventArgs e)
         {
-            // TextBox1'den PersonID'yi al
+            // TextBox1'den TCNumber'ý al
             if (string.IsNullOrEmpty(txtInput.Text))
             {
-                MessageBox.Show("Lütfen PersonID girin.");
+                MessageBox.Show("Lütfen TC numarasýný girin.");
                 return;
             }
 
-            int personId;
-            if (!int.TryParse(txtInput.Text, out personId))
-            {
-                MessageBox.Show("Geçerli bir PersonID girin.");
-                return;
-            }
+            string tcNumber = txtInput.Text;
 
-            string uniqueCode = GetUniqueCodeFromDatabase(personId);
+            string uniqueCode = GetUniqueCodeFromDatabase(tcNumber);
             if (uniqueCode == null)
             {
                 MessageBox.Show("Kiþi bulunamadý veya UniqueCode bulunamadý.");
@@ -122,14 +128,14 @@ namespace TT
         }
 
         // Veritabanýndan UniqueCode almak için kullanýlan metod
-        private string GetUniqueCodeFromDatabase(int personId)
+        private string GetUniqueCodeFromDatabase(string tcNumber)
         {
             string uniqueCode = null;
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                string query = "SELECT UniqueCode FROM Person WHERE PersonID = @PersonID";
+                string query = "SELECT UniqueCode FROM Person WHERE TCNumber = @TCNumber";
                 SqlCommand command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@PersonID", personId);
+                command.Parameters.AddWithValue("@TCNumber", tcNumber);
 
                 try
                 {
@@ -146,6 +152,35 @@ namespace TT
                 }
             }
             return uniqueCode;
+        }
+
+        // Veritabanýndan QR kod sahibi kiþiyi almak için kullanýlan metod
+        private string GetOwnerNameFromDatabase(string uniqueCode)
+        {
+            string ownerName = null;
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT FirstName, LastName FROM Person WHERE UniqueCode = @UniqueCode";
+                SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@UniqueCode", uniqueCode);
+
+                try
+                {
+                    connection.Open();
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            ownerName = $"{reader["FirstName"]} {reader["LastName"]}";
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Veritabaný hatasý: " + ex.Message);
+                }
+            }
+            return ownerName;
         }
 
         // QR kodu kaydetme iþlemi
@@ -173,5 +208,16 @@ namespace TT
                 MessageBox.Show("Önce bir QR kodu oluþturun.");
             }
         }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void kayýtToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Form2 form2 = new Form2();
+            form2.Show();
+        }
     }
-}c
+}
